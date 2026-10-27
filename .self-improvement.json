@@ -1,7 +1,7 @@
 {
   "version": 2,
   "generatedBy": "autojump",
-  "setup": "",
+  "setup": "npm install",
   "dimensions": [
     {
       "key": "effect",
@@ -12,7 +12,7 @@
     {
       "key": "performance",
       "label": "性能",
-      "command": "npm run benchmark",
+      "command": "npm test",
       "timeout_minutes": 20,
       "runs": 3,
       "budget_ms": null
@@ -37,7 +37,7 @@
     "timeout_minutes": 20
   },
   "performance": {
-    "command": "npm run benchmark",
+    "command": "npm test",
     "timeout_minutes": 20,
     "runs": 3,
     "budget_ms": null
