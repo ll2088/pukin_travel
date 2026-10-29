@@ -89,3 +89,22 @@ test('README 不残留占位符或搜索简报重复段落', () => {
   assert.ok(!/TODO|待补充/.test(readme), '存在占位符');
   assert.ok(!readme.includes('关键词: 普吉岛4天3晚旅游计划'), '残留搜索简报原文');
 });
+
+test('README 包含亲子游简报六个必备小节', () => {
+  for (const title of ['行程框架', '预订渠道', '风险提示', 'Day2 备选', 'Day4 备选', '不同人群玩法']) {
+    assert.ok(section(title).trim().length > 0, '缺少小节：' + title);
+  }
+});
+
+test('README 中 Day 1 至 Day 4 均有独立小节或明确标识', () => {
+  for (let d = 1; d <= 4; d++) {
+    assert.ok(daySection(d).trim().length > 0, '缺少第 ' + d + ' 天小节');
+    assert.ok(readme.includes('Day ' + d), '缺少 Day ' + d + ' 标识');
+  }
+});
+
+test('README 包含签证、机票、酒店、预算关键词', () => {
+  for (const word of ['签证', '机票', '酒店', '预算']) {
+    assert.ok(readme.includes(word), '缺少关键词：' + word);
+  }
+});
