@@ -35,3 +35,23 @@ test('关键信息易检索：包含地址/时段/预订提示关键词', () => 
   assert.ok(readme.includes('车程'), '缺少时段/车程信息');
   assert.ok(readme.includes('集合时间'), '缺少集合时间提示');
 });
+
+test('文档内相对链接与锚点均可解析，无断链', () => {
+  const files = ['README.md', 'docs/itinerary.md', 'docs/transport.md', 'docs/preparation.md', 'docs/safety.md'];
+  for (const file of files) {
+    const content = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    const links = content.match(/\[[^\]]*\]\(([^)]+)\)/g) || [];
+    for (const link of links) {
+      const target = link.match(/\(([^)]+)\)/)[1];
+      if (/^https?:/.test(target)) continue;
+      const [pathPart, anchor] = target.split('#');
+      const resolved = path.resolve(path.dirname(path.join(__dirname, '..', file)), pathPart);
+      assert.ok(fs.existsSync(resolved), '断链：' + file + ' -> ' + target);
+      if (anchor) {
+        const targetContent = fs.readFileSync(resolved, 'utf8');
+        const heading = anchor.replace(/-/g, ' ');
+        assert.ok(targetContent.includes(heading), '锚点不存在：' + target);
+      }
+    }
+  }
+});

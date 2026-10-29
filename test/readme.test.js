@@ -89,3 +89,11 @@ test('README 不残留占位符或搜索简报重复段落', () => {
   assert.ok(!/TODO|待补充/.test(readme), '存在占位符');
   assert.ok(!readme.includes('关键词: 普吉岛4天3晚旅游计划'), '残留搜索简报原文');
 });
+
+test('README 索引包含 docs/ 下四类文档链接且文件存在', () => {
+  const files = ['docs/itinerary.md', 'docs/transport.md', 'docs/preparation.md', 'docs/safety.md'];
+  for (const file of files) {
+    assert.ok(readme.includes('(' + file + ')'), 'README 缺少索引链接：' + file);
+    assert.ok(fs.existsSync(path.join(__dirname, '..', file)), '索引目标文件不存在：' + file);
+  }
+});
