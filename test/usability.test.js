@@ -35,3 +35,9 @@ test('关键信息易检索：包含地址/时段/预订提示关键词', () => 
   assert.ok(readme.includes('车程'), '缺少时段/车程信息');
   assert.ok(readme.includes('集合时间'), '缺少集合时间提示');
 });
+
+test('README 包含亲子游相关描述且文档可正常渲染', () => {
+  assert.ok(readme.includes('亲子'), '缺少亲子描述');
+  assert.ok(readme.includes('儿童'), '缺少儿童描述');
+  assert.ok(/^### /m.test(readme), '缺少三级标题，文档结构可能异常');
+});
