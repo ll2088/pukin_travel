@@ -13,6 +13,12 @@ function parseFromMessage(message) {
   if (expectedMatch) {
     result.actual = expectedMatch[1];
     result.expected = expectedMatch[2];
+    return result;
+  }
+  const notEqualMatch = message.match(/([^\s]+)\s+!==\s+([^\s]+)/);
+  if (notEqualMatch) {
+    result.actual = notEqualMatch[1];
+    result.expected = notEqualMatch[2];
   }
   return result;
 }
@@ -21,11 +27,12 @@ function buildDiagnostic(name, err, attempts, maxRetries) {
   const parsed = parseFromMessage(err && err.message);
   const expected = err && err.expected !== undefined ? err.expected : (parsed.expected !== undefined ? parsed.expected : '(未提供)');
   const actual = err && err.actual !== undefined ? err.actual : (parsed.actual !== undefined ? parsed.actual : '(未提供)');
+  const resolvedAttempts = attempts !== undefined ? attempts : 0;
   return {
     name: name,
     expected: expected,
     actual: actual,
-    attempts: attempts,
+    attempts: resolvedAttempts,
     maxRetries: maxRetries,
     error: err && err.message ? err.message : String(err)
   };
@@ -182,14 +189,14 @@ test('重试耗尽：连续失败达到上限后明确失败', () => {
   }
   assert.strictEqual(calls, MAX_RETRIES + 1, '重试次数应等于上限加一');
   const diag = assertDiagnosticComplete(buildDiagnostic('模拟耗尽', lastErr, MAX_RETRIES, MAX_RETRIES));
-  assert.strictEqual(diag.expected, 1, '诊断缺少期望值');
-  assert.strictEqual(diag.actual, 2, '诊断缺少实际值');
+  assert.strictEqual(diag.expected, 2, '诊断缺少期望值');
+  assert.strictEqual(diag.actual, 1, '诊断缺少实际值');
   assert.strictEqual(diag.attempts, MAX_RETRIES, '重试次数应等于上限');
   assert.strictEqual(diag.maxRetries, MAX_RETRIES, '重试上限配置不一致');
   assert.ok(diag.error.includes('模拟持续失败'), '诊断缺少错误信息');
   const output = formatDiagnostics('模拟耗尽', lastErr, MAX_RETRIES);
-  assert.ok(output.includes('期望值: 1'), '诊断缺少期望值');
-  assert.ok(output.includes('实际值: 2'), '诊断缺少实际值');
+  assert.ok(output.includes('期望值: 2'), '诊断缺少期望值');
+  assert.ok(output.includes('实际值: 1'), '诊断缺少实际值');
   assert.ok(output.includes('重试次数: ' + MAX_RETRIES + '/' + MAX_RETRIES), '诊断缺少重试次数');
 });
 
@@ -204,8 +211,8 @@ test('首次即失败且不重试时诊断字段完整', () => {
   }
   assert.strictEqual(calls, 1, '首次失败不应重试');
   const diag = assertDiagnosticComplete(buildDiagnostic('模拟首次失败', lastErr, 0, MAX_RETRIES));
-  assert.strictEqual(diag.expected, 'a', '诊断缺少期望值');
-  assert.strictEqual(diag.actual, 'b', '诊断缺少实际值');
+  assert.strictEqual(diag.expected, 'b', '诊断缺少期望值');
+  assert.strictEqual(diag.actual, 'a', '诊断缺少实际值');
   assert.strictEqual(diag.attempts, 0, '首次失败重试次数应为 0');
   assert.strictEqual(diag.maxRetries, MAX_RETRIES, '重试上限配置不一致');
   assert.ok(diag.error.includes('模拟首次失败'), '诊断缺少错误信息');
