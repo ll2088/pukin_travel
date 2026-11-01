@@ -19,6 +19,13 @@ function buildDiagnostic(name, err, attempts, maxRetries) {
   };
 }
 
+function assertDiagnosticComplete(diag) {
+  if (diag.expected === undefined || diag.actual === undefined || diag.attempts === undefined) {
+    throw new Error('诊断字段不完整: ' + JSON.stringify(diag));
+  }
+  return diag;
+}
+
 function formatDiagnostics(name, err, attempt) {
   const diag = buildDiagnostic(name, err, attempt, MAX_RETRIES);
   return [
@@ -32,7 +39,9 @@ function formatDiagnostics(name, err, attempt) {
 
 function test(name, fn) {
   let lastErr = null;
+  let attempts = 0;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    attempts = attempt;
     try {
       fn();
       console.log('PASS ' + name + (attempt > 0 ? ' (重试 ' + attempt + ' 次后通过)' : ''));
@@ -41,8 +50,8 @@ function test(name, fn) {
       lastErr = err;
     }
   }
-  const diag = buildDiagnostic(name, lastErr, MAX_RETRIES, MAX_RETRIES);
-  console.error(formatDiagnostics(name, lastErr, MAX_RETRIES));
+  const diag = assertDiagnosticComplete(buildDiagnostic(name, lastErr, attempts, MAX_RETRIES));
+  console.error(formatDiagnostics(name, lastErr, attempts));
   process.exitCode = 1;
   return diag;
 }
@@ -160,7 +169,7 @@ test('重试耗尽：连续失败达到上限后明确失败', () => {
     }
   }
   assert.strictEqual(calls, MAX_RETRIES + 1, '重试次数应等于上限加一');
-  const diag = buildDiagnostic('模拟耗尽', lastErr, MAX_RETRIES, MAX_RETRIES);
+  const diag = assertDiagnosticComplete(buildDiagnostic('模拟耗尽', lastErr, MAX_RETRIES, MAX_RETRIES));
   assert.strictEqual(diag.expected, 1, '诊断缺少期望值');
   assert.strictEqual(diag.actual, 2, '诊断缺少实际值');
   assert.strictEqual(diag.attempts, MAX_RETRIES, '重试次数应等于上限');
@@ -181,7 +190,7 @@ test('首次即失败且不重试时诊断字段完整', () => {
     lastErr = err;
   }
   assert.strictEqual(calls, 1, '首次失败不应重试');
-  const diag = buildDiagnostic('模拟首次失败', lastErr, 0, MAX_RETRIES);
+  const diag = assertDiagnosticComplete(buildDiagnostic('模拟首次失败', lastErr, 0, MAX_RETRIES));
   assert.strictEqual(diag.expected, 'a', '诊断缺少期望值');
   assert.strictEqual(diag.actual, 'b', '诊断缺少实际值');
   assert.strictEqual(diag.attempts, 0, '首次失败重试次数应为 0');
