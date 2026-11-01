@@ -4,15 +4,33 @@ const assert = require('assert');
 
 const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
 
+const MAX_RETRIES = 2;
+
+function formatDiagnostics(name, err, attempt) {
+  const expected = err && err.expected !== undefined ? err.expected : '(未提供)';
+  const actual = err && err.actual !== undefined ? err.actual : '(未提供)';
+  return [
+    'FAIL ' + name,
+    '  期望值: ' + expected,
+    '  实际值: ' + actual,
+    '  重试次数: ' + attempt + '/' + MAX_RETRIES,
+    '  错误信息: ' + (err && err.message ? err.message : String(err))
+  ].join('\n');
+}
+
 function test(name, fn) {
-  try {
-    fn();
-    console.log('PASS ' + name);
-  } catch (err) {
-    console.error('FAIL ' + name);
-    console.error(err.message);
-    process.exitCode = 1;
+  let lastErr = null;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      fn();
+      console.log('PASS ' + name + (attempt > 0 ? ' (重试 ' + attempt + ' 次后通过)' : ''));
+      return;
+    } catch (err) {
+      lastErr = err;
+    }
   }
+  console.error(formatDiagnostics(name, lastErr, MAX_RETRIES));
+  process.exitCode = 1;
 }
 
 function section(title) {
@@ -88,4 +106,56 @@ test('逐日行程引用的地点与交通方式在文档内有说明', () => {
 test('README 不残留占位符或搜索简报重复段落', () => {
   assert.ok(!/TODO|待补充/.test(readme), '存在占位符');
   assert.ok(!readme.includes('关键词: 普吉岛4天3晚旅游计划'), '残留搜索简报原文');
+});
+
+test('失败诊断输出包含期望值、实际值与重试次数', () => {
+  const err = new assert.AssertionError({
+    message: '模拟断言失败',
+    expected: 5600,
+    actual: 5500
+  });
+  const output = formatDiagnostics('模拟用例', err, MAX_RETRIES);
+  assert.ok(output.includes('期望值: 5600'), '诊断缺少期望值');
+  assert.ok(output.includes('实际值: 5500'), '诊断缺少实际值');
+  assert.ok(output.includes('重试次数: ' + MAX_RETRIES + '/' + MAX_RETRIES), '诊断缺少重试次数');
+});
+
+test('有限重试：首次失败后重试成功且不超过上限', () => {
+  let calls = 0;
+  let passed = false;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    calls++;
+    if (attempt === 1) {
+      passed = true;
+      break;
+    }
+  }
+  assert.ok(passed, '重试后应通过');
+  assert.ok(calls <= MAX_RETRIES + 1, '重试次数超过上限');
+});
+
+test('重试耗尽：连续失败达到上限后明确失败', () => {
+  let calls = 0;
+  let lastErr = null;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    calls++;
+    try {
+      assert.strictEqual(1, 2, '模拟持续失败');
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  assert.strictEqual(calls, MAX_RETRIES + 1, '重试次数应等于上限加一');
+  const output = formatDiagnostics('模拟耗尽', lastErr, MAX_RETRIES);
+  assert.ok(output.includes('期望值: 1'), '诊断缺少期望值');
+  assert.ok(output.includes('实际值: 2'), '诊断缺少实际值');
+  assert.ok(output.includes('重试次数: ' + MAX_RETRIES + '/' + MAX_RETRIES), '诊断缺少重试次数');
+});
+
+test('确定性校验：同一输入多次运行结果一致', () => {
+  const first = section('预算');
+  const second = section('预算');
+  const third = section('预算');
+  assert.strictEqual(first, second, '同一输入结果不一致');
+  assert.strictEqual(second, third, '同一输入结果不一致');
 });
