@@ -188,6 +188,7 @@ test('重试耗尽：连续失败达到上限后明确失败', () => {
     }
   }
   assert.strictEqual(calls, MAX_RETRIES + 1, '重试次数应等于上限加一');
+  assert.ok(calls - 1 <= MAX_RETRIES, '重试次数 ' + (calls - 1) + ' 超过配置上限 ' + MAX_RETRIES);
   const diag = assertDiagnosticComplete(buildDiagnostic('模拟耗尽', lastErr, MAX_RETRIES, MAX_RETRIES));
   assert.strictEqual(diag.expected, 2, '诊断缺少期望值');
   assert.strictEqual(diag.actual, 1, '诊断缺少实际值');
@@ -198,6 +199,8 @@ test('重试耗尽：连续失败达到上限后明确失败', () => {
   assert.ok(output.includes('期望值: 2'), '诊断缺少期望值');
   assert.ok(output.includes('实际值: 1'), '诊断缺少实际值');
   assert.ok(output.includes('重试次数: ' + MAX_RETRIES + '/' + MAX_RETRIES), '诊断缺少重试次数');
+  assert.ok(diag.attempts <= diag.maxRetries, '重试次数 ' + diag.attempts + ' 超过上限 ' + diag.maxRetries);
+  console.log('DIAG-SAMPLE 重试耗尽:\n' + output);
 });
 
 test('首次即失败且不重试时诊断字段完整', () => {
@@ -216,6 +219,19 @@ test('首次即失败且不重试时诊断字段完整', () => {
   assert.strictEqual(diag.attempts, 0, '首次失败重试次数应为 0');
   assert.strictEqual(diag.maxRetries, MAX_RETRIES, '重试上限配置不一致');
   assert.ok(diag.error.includes('模拟首次失败'), '诊断缺少错误信息');
+});
+
+test('失败诊断样例输出包含期望值、实际值与重试次数', () => {
+  const err = new assert.AssertionError({
+    message: '样例失败',
+    expected: 5600,
+    actual: 5500
+  });
+  const output = formatDiagnostics('样例用例', err, 1);
+  assert.ok(output.includes('期望值: 5600'), '样例缺少期望值');
+  assert.ok(output.includes('实际值: 5500'), '样例缺少实际值');
+  assert.ok(output.includes('重试次数: 1/' + MAX_RETRIES), '样例缺少重试次数');
+  console.log('DIAG-SAMPLE 断言失败:\n' + output);
 });
 
 test('确定性校验：同一输入多次运行结果一致', () => {
