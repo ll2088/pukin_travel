@@ -6,15 +6,27 @@ const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
 
 const MAX_RETRIES = 2;
 
-function formatDiagnostics(name, err, attempt) {
+function buildDiagnostic(name, err, attempts, maxRetries) {
   const expected = err && err.expected !== undefined ? err.expected : '(未提供)';
   const actual = err && err.actual !== undefined ? err.actual : '(未提供)';
+  return {
+    name: name,
+    expected: expected,
+    actual: actual,
+    attempts: attempts,
+    maxRetries: maxRetries,
+    error: err && err.message ? err.message : String(err)
+  };
+}
+
+function formatDiagnostics(name, err, attempt) {
+  const diag = buildDiagnostic(name, err, attempt, MAX_RETRIES);
   return [
-    'FAIL ' + name,
-    '  期望值: ' + expected,
-    '  实际值: ' + actual,
-    '  重试次数: ' + attempt + '/' + MAX_RETRIES,
-    '  错误信息: ' + (err && err.message ? err.message : String(err))
+    'FAIL ' + diag.name,
+    '  期望值: ' + diag.expected,
+    '  实际值: ' + diag.actual,
+    '  重试次数: ' + diag.attempts + '/' + diag.maxRetries,
+    '  错误信息: ' + diag.error
   ].join('\n');
 }
 
@@ -29,8 +41,10 @@ function test(name, fn) {
       lastErr = err;
     }
   }
+  const diag = buildDiagnostic(name, lastErr, MAX_RETRIES, MAX_RETRIES);
   console.error(formatDiagnostics(name, lastErr, MAX_RETRIES));
   process.exitCode = 1;
+  return diag;
 }
 
 function section(title) {
@@ -146,10 +160,32 @@ test('重试耗尽：连续失败达到上限后明确失败', () => {
     }
   }
   assert.strictEqual(calls, MAX_RETRIES + 1, '重试次数应等于上限加一');
+  const diag = buildDiagnostic('模拟耗尽', lastErr, MAX_RETRIES, MAX_RETRIES);
+  assert.strictEqual(diag.expected, 1, '诊断缺少期望值');
+  assert.strictEqual(diag.actual, 2, '诊断缺少实际值');
+  assert.strictEqual(diag.attempts, MAX_RETRIES, '重试次数应等于上限');
+  assert.strictEqual(diag.maxRetries, MAX_RETRIES, '重试上限配置不一致');
   const output = formatDiagnostics('模拟耗尽', lastErr, MAX_RETRIES);
   assert.ok(output.includes('期望值: 1'), '诊断缺少期望值');
   assert.ok(output.includes('实际值: 2'), '诊断缺少实际值');
   assert.ok(output.includes('重试次数: ' + MAX_RETRIES + '/' + MAX_RETRIES), '诊断缺少重试次数');
+});
+
+test('首次即失败且不重试时诊断字段完整', () => {
+  let calls = 0;
+  let lastErr = null;
+  try {
+    calls++;
+    assert.strictEqual('a', 'b', '模拟首次失败');
+  } catch (err) {
+    lastErr = err;
+  }
+  assert.strictEqual(calls, 1, '首次失败不应重试');
+  const diag = buildDiagnostic('模拟首次失败', lastErr, 0, MAX_RETRIES);
+  assert.strictEqual(diag.expected, 'a', '诊断缺少期望值');
+  assert.strictEqual(diag.actual, 'b', '诊断缺少实际值');
+  assert.strictEqual(diag.attempts, 0, '首次失败重试次数应为 0');
+  assert.strictEqual(diag.maxRetries, MAX_RETRIES, '重试上限配置不一致');
 });
 
 test('确定性校验：同一输入多次运行结果一致', () => {
