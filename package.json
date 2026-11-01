@@ -4,7 +4,7 @@
   "private": true,
   "description": "普吉岛4天3晚旅游计划",
   "scripts": {
-    "test": "node test/readme.test.js",
+    "test": "node test/readme.test.js && node test/usability.test.js",
     "test:e2e": "node test/usability.test.js"
   }
 }
