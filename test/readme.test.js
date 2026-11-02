@@ -16,13 +16,26 @@ function test(name, fn) {
 }
 
 function section(title) {
-  const re = new RegExp('^##\\s*' + title + '[^\\n]*$', 'm');
-  const match = readme.match(re);
-  if (!match) return '';
-  const start = match.index + match[0].length;
-  const rest = readme.slice(start);
-  const next = rest.search(/^## /m);
-  return next === -1 ? rest : rest.slice(0, next);
+  const lines = readme.split('\n');
+  let startLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^##\s+(.+)$/);
+    if (!m) continue;
+    const heading = m[1].trim();
+    if (heading === title || heading.startsWith(title + '：') || heading.startsWith(title + ':')) {
+      startLine = i;
+      break;
+    }
+  }
+  if (startLine === -1) return '';
+  let endLine = lines.length;
+  for (let i = startLine + 1; i < lines.length; i++) {
+    if (/^## /.test(lines[i])) {
+      endLine = i;
+      break;
+    }
+  }
+  return lines.slice(startLine + 1, endLine).join('\n');
 }
 
 function daySection(day) {
