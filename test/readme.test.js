@@ -20,7 +20,7 @@ function section(title) {
   let startLine = -1;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line.startsWith('## ' + title) || line.startsWith('##' + title)) {
+    if (line.startsWith('## ' + title)) {
       startLine = i;
       break;
     }
@@ -29,7 +29,7 @@ function section(title) {
   let endLine = lines.length;
   for (let i = startLine + 1; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line.startsWith('## ') || (line.startsWith('##') && line.length > 2 && line[2] !== '#')) {
+    if (line.startsWith('## ')) {
       endLine = i;
       break;
     }
