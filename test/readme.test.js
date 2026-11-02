@@ -26,12 +26,20 @@ function section(title) {
 }
 
 function daySection(day) {
+  // 两种结构：单套行程用「### 第 N 天」，两套排法（行程A/B）用「#### Day N」。
+  // 两套排法时取第一套（行程A）的当天内容。
   const re = new RegExp('^### 第 ' + day + ' 天[^\\n]*$', 'm');
   const match = readme.match(re);
-  if (!match) return '';
-  const start = match.index + match[0].length;
-  const rest = readme.slice(start);
-  const next = rest.search(/^### /m);
+  if (match) {
+    const rest = readme.slice(match.index + match[0].length);
+    const next = rest.search(/^### /m);
+    return next === -1 ? rest : rest.slice(0, next);
+  }
+  const reAlt = new RegExp('^#### Day ' + day + '[^\\n]*$', 'm');
+  const matchAlt = readme.match(reAlt);
+  if (!matchAlt) return '';
+  const rest = readme.slice(matchAlt.index + matchAlt[0].length);
+  const next = rest.search(/^#### /m);
   return next === -1 ? rest : rest.slice(0, next);
 }
 
