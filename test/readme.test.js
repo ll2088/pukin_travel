@@ -15,23 +15,20 @@ function test(name, fn) {
   }
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function section(title) {
   const lines = readme.split(/\r?\n/);
+  const headingRe = new RegExp('^##\\s+' + escapeRegExp(title) + '([：:\\s\\t].*)?$');
   let startLine = -1;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line.startsWith('## ')) continue;
-    const heading = line.slice(3).trim();
-    if (heading === title) {
+    if (headingRe.test(line)) {
       startLine = i;
       break;
-    }
-    if (heading.startsWith(title) && title.length < heading.length) {
-      const nextChar = heading.charAt(title.length);
-      if (nextChar === '：' || nextChar === ':' || nextChar === ' ' || nextChar === '\t') {
-        startLine = i;
-        break;
-      }
     }
   }
   if (startLine === -1) return '';
@@ -82,6 +79,12 @@ test('section() 支持带全角冒号后缀的二级标题', () => {
   assert.ok(body.includes('Day 1'), '行程A 小节内容未包含 Day 1');
   assert.ok(body.includes('Day 4'), '行程A 小节内容未包含 Day 4');
   assert.ok(!body.includes('## 行程B'), '行程A 小节被下一个二级标题截断前混入了行程B');
+});
+
+test('section() 命中带全角冒号后缀的标题', () => {
+  const body = section('行程A');
+  assert.ok(body.length > 0, '带全角冒号后缀的行程A标题未被命中');
+  assert.ok(body.includes('Day 1'), '行程A 小节内容未包含 Day 1');
 });
 
 test('两套行程均包含 Day 1 至 Day 4 且每天有上午/下午/晚间', () => {
