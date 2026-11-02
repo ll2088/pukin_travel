@@ -22,9 +22,16 @@ function section(title) {
     const line = lines[i].trim();
     if (!line.startsWith('## ')) continue;
     const heading = line.slice(3).trim();
-    if (heading === title || heading.startsWith(title + '：') || heading.startsWith(title + ':') || heading.startsWith(title + ' ')) {
+    if (heading === title) {
       startLine = i;
       break;
+    }
+    if (heading.startsWith(title)) {
+      const nextChar = heading.charAt(title.length);
+      if (nextChar === '：' || nextChar === ':' || nextChar === ' ' || nextChar === '\t') {
+        startLine = i;
+        break;
+      }
     }
   }
   if (startLine === -1) return '';
@@ -36,7 +43,7 @@ function section(title) {
       break;
     }
   }
-  return lines.slice(startLine + 1, endLine).join('\n');
+  return lines.slice(startLine + 1, endLine).join('\n').trim();
 }
 
 function daySection(day) {
@@ -62,6 +69,12 @@ function itinerarySection(name) {
 test('README 包含行程A与行程B两套四日排法', () => {
   assert.ok(section('行程A').trim().length > 0, '缺少行程A小节');
   assert.ok(section('行程B').trim().length > 0, '缺少行程B小节');
+});
+
+test('section() 支持带全角冒号后缀的二级标题', () => {
+  const body = section('行程A');
+  assert.ok(body.includes('Day 1'), '行程A 小节内容未包含 Day 1');
+  assert.ok(body.includes('Day 4'), '行程A 小节内容未包含 Day 4');
 });
 
 test('两套行程均包含 Day 1 至 Day 4 且每天有上午/下午/晚间', () => {
