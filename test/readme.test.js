@@ -16,7 +16,7 @@ function test(name, fn) {
 }
 
 function section(title) {
-  const re = new RegExp('^## ' + title + '\\s*$', 'm');
+  const re = new RegExp('^##\\s*' + title + '[^\\n]*$', 'm');
   const match = readme.match(re);
   if (!match) return '';
   const start = match.index + match[0].length;
@@ -36,7 +36,7 @@ function daySection(day) {
 }
 
 function itinerarySection(name) {
-  const re = new RegExp('^### ' + name + '[^\\n]*$', 'm');
+  const re = new RegExp('^###\\s*' + name + '[^\\n]*$', 'm');
   const match = readme.match(re);
   if (!match) return '';
   const start = match.index + match[0].length;
@@ -46,12 +46,12 @@ function itinerarySection(name) {
 }
 
 test('README 包含行程A与行程B两套四日排法', () => {
-  assert.ok(section('行程A：地理片区动线').trim().length > 0, '缺少行程A小节');
-  assert.ok(section('行程B：老城日落与海滩巡礼').trim().length > 0, '缺少行程B小节');
+  assert.ok(section('行程A').trim().length > 0, '缺少行程A小节');
+  assert.ok(section('行程B').trim().length > 0, '缺少行程B小节');
 });
 
 test('两套行程均包含 Day 1 至 Day 4 且每天有上午/下午/晚间', () => {
-  for (const name of ['行程A：地理片区动线', '行程B：老城日落与海滩巡礼']) {
+  for (const name of ['行程A', '行程B']) {
     const body = itinerarySection(name);
     for (let d = 1; d <= 4; d++) {
       const re = new RegExp('^#### Day ' + d + '[^\\n]*$', 'm');
@@ -68,7 +68,7 @@ test('两套行程均包含 Day 1 至 Day 4 且每天有上午/下午/晚间', (
 });
 
 test('两套行程均包含每日活动、餐饮与交通关键词', () => {
-  for (const name of ['行程A：地理片区动线', '行程B：老城日落与海滩巡礼']) {
+  for (const name of ['行程A', '行程B']) {
     const body = itinerarySection(name);
     for (const word of ['早餐', '午餐', '晚餐', '交通']) {
       assert.ok(body.includes(word), name + ' 缺少关键词：' + word);

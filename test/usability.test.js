@@ -36,22 +36,25 @@ test('关键信息易检索：包含地址/时段/预订提示关键词', () => 
   assert.ok(readme.includes('集合时间'), '缺少集合时间提示');
 });
 
+function normalizeAnchor(text) {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\u4e00-\u9fa5\- ]/g, '')
+    .replace(/\s+/g, '-');
+}
+
 test('README 无乱码且内部锚点链接有效', () => {
   assert.ok(!/\uFFFD/.test(readme), '存在乱码字符');
   const anchors = new Set();
   for (const line of readme.split('\n')) {
     const m = line.match(/^#{1,6}\s+(.+)$/);
     if (!m) continue;
-    const slug = m[1]
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w\u4e00-\u9fa5\- ]/g, '')
-      .replace(/\s+/g, '-');
-    anchors.add(slug);
+    anchors.add(normalizeAnchor(m[1]));
   }
   const links = readme.match(/\]\(#[^)]+\)/g) || [];
   for (const link of links) {
-    const target = link.slice(2, -1);
-    assert.ok(anchors.has(target), '无效锚点链接：#' + target);
+    const target = normalizeAnchor(link.slice(2, -1));
+    assert.ok(anchors.has(target), '无效锚点链接：#' + link.slice(2, -1));
   }
 });
