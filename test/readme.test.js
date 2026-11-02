@@ -100,4 +100,5 @@ test('README 不残留占位符或搜索简报重复段落', () => {
 
 test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
+  assert.ok(/\[docs\/phuket-4d3n\.md\]\(docs\/phuket-4d3n\.md\)/.test(readme), '链接格式不正确');
 });
