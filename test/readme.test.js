@@ -15,18 +15,47 @@ function test(name, fn) {
   }
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function section(title) {
-  const re = new RegExp('^## ' + title + '\\s*$', 'm');
+  const lines = readme.split(/\r?\n/);
+  const headingRe = new RegExp('^' + escapeRegExp(title) + '(?:[：:\\s].*)?$');
+  let startLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line.startsWith('## ')) continue;
+    const headingText = line.slice(3).trim();
+    if (headingRe.test(headingText)) {
+      startLine = i;
+      break;
+    }
+  }
+  if (startLine === -1) return '';
+  let endLine = lines.length;
+  for (let i = startLine + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('## ')) {
+      endLine = i;
+      break;
+    }
+  }
+  return lines.slice(startLine + 1, endLine).join('\n').trim();
+}
+
+function daySection(day) {
+  const re = new RegExp('^#### Day ' + day + '[^\\n]*$', 'm');
   const match = readme.match(re);
   if (!match) return '';
   const start = match.index + match[0].length;
   const rest = readme.slice(start);
-  const next = rest.search(/^## /m);
+  const next = rest.search(/^#### /m);
   return next === -1 ? rest : rest.slice(0, next);
 }
 
-function daySection(day) {
-  const re = new RegExp('^### 第 ' + day + ' 天[^\\n]*$', 'm');
+function itinerarySection(name) {
+  const re = new RegExp('^###\\s*' + name + '[^\\n]*$', 'm');
   const match = readme.match(re);
   if (!match) return '';
   const start = match.index + match[0].length;
@@ -35,13 +64,53 @@ function daySection(day) {
   return next === -1 ? rest : rest.slice(0, next);
 }
 
-test('README 包含 4 天逐日行程且每天有上午/下午/晚间', () => {
+test('README 包含行程A与行程B两套四日排法', () => {
+  assert.ok(section('行程A').trim().length > 0, '缺少行程A小节');
+  assert.ok(section('行程B').trim().length > 0, '缺少行程B小节');
+  for (const name of ['行程A', '行程B']) {
+    const body = section(name);
+    for (let d = 1; d <= 4; d++) {
+      assert.ok(body.includes('Day ' + d), name + ' 小节内容未包含 Day ' + d);
+    }
+  }
+});
+
+test('section() 支持带全角冒号后缀的二级标题', () => {
+  const body = section('行程A');
+  assert.ok(body.includes('Day 1'), '行程A 小节内容未包含 Day 1');
+  assert.ok(body.includes('Day 4'), '行程A 小节内容未包含 Day 4');
+  assert.ok(!body.includes('## 行程B'), '行程A 小节被下一个二级标题截断前混入了行程B');
+});
+
+test('section() 命中带全角冒号后缀的标题', () => {
+  const body = section('行程A');
+  assert.ok(body.length > 0, '带全角冒号后缀的行程A标题未被命中');
+  assert.ok(body.includes('Day 1'), '行程A 小节内容未包含 Day 1');
+});
+
+test('两套行程均包含 Day 1 至 Day 4 且每天有上午/下午/晚间', () => {
+  for (const name of ['行程A', '行程B']) {
+    const body = itinerarySection(name);
+    for (let d = 1; d <= 4; d++) {
+      const re = new RegExp('^#### Day ' + d + '[^\\n]*$', 'm');
+      assert.ok(re.test(body), name + ' 缺少 Day ' + d + ' 小节');
+    }
+  }
   for (let d = 1; d <= 4; d++) {
     const body = daySection(d);
-    assert.ok(body, '缺少第 ' + d + ' 天小节');
-    assert.ok(body.includes('上午'), '第 ' + d + ' 天缺少上午安排');
-    assert.ok(body.includes('下午'), '第 ' + d + ' 天缺少下午安排');
-    assert.ok(body.includes('晚间'), '第 ' + d + ' 天缺少晚间安排');
+    assert.ok(body, '缺少 Day ' + d + ' 小节');
+    assert.ok(body.includes('上午'), 'Day ' + d + ' 缺少上午安排');
+    assert.ok(body.includes('下午'), 'Day ' + d + ' 缺少下午安排');
+    assert.ok(body.includes('晚间'), 'Day ' + d + ' 缺少晚间安排');
+  }
+});
+
+test('两套行程均包含每日活动、餐饮与交通关键词', () => {
+  for (const name of ['行程A', '行程B']) {
+    const body = itinerarySection(name);
+    for (const word of ['早餐', '午餐', '晚餐', '交通']) {
+      assert.ok(body.includes(word), name + ' 缺少关键词：' + word);
+    }
   }
 });
 
@@ -49,6 +118,12 @@ test('README 包含住宿、交通、预算、行前准备四个独立小节', (
   for (const title of ['住宿', '交通', '预算', '行前准备']) {
     assert.ok(section(title).trim().length > 0, '缺少小节：' + title);
   }
+});
+
+test('预算与住宿部分含具体金额或选项说明', () => {
+  assert.ok(section('预算').includes('元'), '预算缺少金额单位');
+  assert.ok(section('住宿').includes('芭东'), '住宿缺少区域选项');
+  assert.ok(section('住宿').includes('预订提示'), '住宿缺少预订提示');
 });
 
 test('预算分项之和等于总预算且非负', () => {
@@ -74,7 +149,7 @@ test('预算分项之和等于总预算且非负', () => {
 });
 
 test('逐日行程引用的地点与交通方式在文档内有说明', () => {
-  const defined = ['芭东', '卡塔', '卡伦', '普吉镇', '皮皮岛', '机场', 'Grab', 'Bolt', '包车', '一日游'];
+  const defined = ['芭东', '卡塔', '卡伦', '普吉镇', '皮皮岛', '机场', 'Grab', 'Bolt', '包车', '一日游', '神仙半岛'];
   for (let d = 1; d <= 4; d++) {
     const body = daySection(d);
     for (const word of defined) {
