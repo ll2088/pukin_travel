@@ -16,13 +16,11 @@ function test(name, fn) {
 }
 
 function section(title) {
-  const lines = readme.split('\n');
+  const lines = readme.split(/\r?\n/);
   let startLine = -1;
   for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^##\s+(.+)$/);
-    if (!m) continue;
-    const heading = m[1].trim();
-    if (heading === title || heading.startsWith(title + '：') || heading.startsWith(title + ':')) {
+    const line = lines[i].trim();
+    if (line.startsWith('## ' + title) || line.startsWith('##' + title)) {
       startLine = i;
       break;
     }
@@ -30,7 +28,8 @@ function section(title) {
   if (startLine === -1) return '';
   let endLine = lines.length;
   for (let i = startLine + 1; i < lines.length; i++) {
-    if (/^## /.test(lines[i])) {
+    const line = lines[i].trim();
+    if (line.startsWith('## ') || (line.startsWith('##') && line.length > 2 && line[2] !== '#')) {
       endLine = i;
       break;
     }
