@@ -21,7 +21,7 @@ function escapeRegExp(text) {
 
 function section(title) {
   const lines = readme.split(/\r?\n/);
-  const headingRe = new RegExp('^' + escapeRegExp(title) + '[：:\\s]*$');
+  const headingRe = new RegExp('^' + escapeRegExp(title) + '(?:[：:\\s].*)?$');
   let startLine = -1;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
