@@ -20,7 +20,9 @@ function section(title) {
   let startLine = -1;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    if (line.startsWith('## ' + title)) {
+    if (!line.startsWith('## ')) continue;
+    const heading = line.slice(3).trim();
+    if (heading === title || heading.startsWith(title + '：') || heading.startsWith(title + ':') || heading.startsWith(title + ' ')) {
       startLine = i;
       break;
     }
