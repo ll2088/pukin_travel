@@ -43,3 +43,16 @@ test('详细行程文档存在且包含至少 4 个二级标题', () => {
   const h2 = doc.match(/^## /gm) || [];
   assert.ok(h2.length >= 4, '二级标题数量不足 4 个');
 });
+
+test('详细行程文档包含两套方案、逐日安排与必备关键词', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (const keyword of ['## 方案A', '## 方案B', '### Day 1', '### Day 2', '### Day 3', '### Day 4', '片区', '出海', '备选', '行前准备', '预算', '风险']) {
+    assert.ok(doc.includes(keyword), '缺少关键词：' + keyword);
+  }
+  const dayCount = (doc.match(/^### Day /gm) || []).length;
+  assert.ok(dayCount >= 8, '逐日小节数量不足 8 个，实际 ' + dayCount);
+  assert.ok((doc.match(/备选/g) || []).length >= 2, '备选说明不足 2 处');
+  assert.ok((doc.match(/预算/g) || []).length >= 2, '预算说明不足 2 处');
+  assert.ok(doc.split('\n').length >= 150, '文档行数不足 150 行');
+});
