@@ -98,6 +98,7 @@ test('README 不残留占位符或搜索简报重复段落', () => {
   assert.ok(!readme.includes('关键词: 普吉岛4天3晚旅游计划'), '残留搜索简报原文');
 });
 
-test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
-  assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
+test('README 包含指向 docs/phuket-4d3n.md 的有效相对链接', () => {
+  const linkRe = /\[[^\]]*\]\(docs\/phuket-4d3n\.md\)/;
+  assert.ok(linkRe.test(readme), '缺少指向 docs/phuket-4d3n.md 的有效相对链接');
 });
