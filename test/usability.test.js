@@ -36,10 +36,25 @@ test('关键信息易检索：包含地址/时段/预订提示关键词', () => 
   assert.ok(readme.includes('集合时间'), '缺少集合时间提示');
 });
 
-test('详细行程文档存在且包含至少 4 个二级标题', () => {
+test('详细行程文档存在且包含 Day 1 至 Day 4 四个二级标题', () => {
   const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
   assert.ok(fs.existsSync(docPath), 'docs/phuket-4d3n.md 不存在');
   const doc = fs.readFileSync(docPath, 'utf8');
-  const h2 = doc.match(/^## /gm) || [];
-  assert.ok(h2.length >= 4, '二级标题数量不足 4 个');
+  for (let d = 1; d <= 4; d++) {
+    assert.ok(new RegExp('^## Day ' + d + '\\b', 'm').test(doc), '缺少 Day ' + d + ' 二级标题');
+  }
+});
+
+test('详细行程文档包含景点、美食、一日游、预算、风险关键词', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (const word of ['景点', '美食', '一日游', '预算', '风险']) {
+    assert.ok(doc.includes(word), '缺少关键词：' + word);
+  }
+});
+
+test('详细行程文档总字数不少于 1500 字', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  assert.ok(doc.length >= 1500, '文档总字数不足 1500 字');
 });
