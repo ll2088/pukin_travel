@@ -43,3 +43,31 @@ test('详细行程文档存在且包含至少 4 个二级标题', () => {
   const h2 = doc.match(/^## /gm) || [];
   assert.ok(h2.length >= 4, '二级标题数量不足 4 个');
 });
+
+test('详细行程文档包含第1天至第4天四个逐日小节', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (let d = 1; d <= 4; d++) {
+    assert.ok(doc.includes('第' + d + '天'), '缺少第' + d + '天小节');
+  }
+});
+
+test('详细行程文档含住宿分区、交通预算、行前政策核对三个非空小节', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (const title of ['住宿分区', '交通预算', '行前政策核对']) {
+    const re = new RegExp('^## ' + title + '\\s*$', 'm');
+    const match = doc.match(re);
+    assert.ok(match, '缺少小节：' + title);
+    const rest = doc.slice(match.index + match[0].length);
+    const next = rest.search(/^## /m);
+    const body = next === -1 ? rest : rest.slice(0, next);
+    assert.ok(body.trim().length > 0, '小节为空：' + title);
+  }
+});
+
+test('详细行程文档正文长度不低于 1200 字符', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  assert.ok(doc.length >= 1200, '篇幅不足：' + doc.length);
+});
