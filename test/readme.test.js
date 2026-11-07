@@ -3,6 +3,8 @@ const path = require('path');
 const assert = require('assert');
 
 const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
+const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+const doc = fs.existsSync(docPath) ? fs.readFileSync(docPath, 'utf8') : '';
 
 function test(name, fn) {
   try {
@@ -101,3 +103,43 @@ test('README 不残留占位符或搜索简报重复段落', () => {
 test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
 });
+
+test('README 指向新文档且无旧模板残留', () => {
+  assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
+  assert.ok(!/5天4晚|Day\s*5/.test(readme), 'README 残留旧模板表述');
+});
+
+test('详细行程文档包含 Day 1–Day 4 且不含 Day 5', () => {
+  assert.ok(doc, 'docs/phuket-4d3n.md 不存在或为空');
+  for (let d = 1; d <= 4; d++) {
+    assert.ok(new RegExp('^## Day ' + d + '\\b', 'm').test(doc), '缺少 Day ' + d);
+  }
+  assert.ok(!/Day\s*5|5天4晚/.test(doc), '文档残留 Day 5 或 5天4晚');
+});
+
+test('详细行程文档预算按交通/住宿/餐饮/跳岛分项并含货币单位总计', () => {
+  const budget = docSection('预算');
+  assert.ok(budget.trim().length > 0, '缺少预算小节');
+  for (const key of ['交通', '住宿', '餐饮', '跳岛']) {
+    assert.ok(new RegExp('\\|\\s*' + key + '\\s*\\|').test(budget), '预算缺少分项：' + key);
+  }
+  assert.ok(/\|\s*合计\s*\|[^|]*元人民币/.test(budget), '预算缺少带货币单位的总计');
+});
+
+test('详细行程文档含交通、跳岛备选与 TDAC 说明', () => {
+  const transport = docSection('交通');
+  assert.ok(transport.includes('机场') && transport.includes('跳岛'), '交通小节缺少机场或跳岛说明');
+  assert.ok(doc.includes('TDAC'), '缺少 TDAC 说明');
+  assert.ok(/跳岛|环岛/.test(doc) && /取消|停驶|替代/.test(doc), '缺少跳岛备选或取消方案');
+  assert.ok(doc.replace(/\s/g, '').length >= 1500, '正文非空白字符数不足 1500');
+});
+
+function docSection(title) {
+  const re = new RegExp('^## ' + title + '\\s*$', 'm');
+  const match = doc.match(re);
+  if (!match) return '';
+  const start = match.index + match[0].length;
+  const rest = doc.slice(start);
+  const next = rest.search(/^## /m);
+  return next === -1 ? rest : rest.slice(0, next);
+}
