@@ -225,7 +225,10 @@ test('docs 非空且关键小节非空', () => {
 test('docs 中检索日期均为合法 YYYY-MM-DD', () => {
   const markers = doc.match(/检索日期/g) || [];
   const dates = [...doc.matchAll(/检索日期\s*(\d{4})-(\d{2})-(\d{2})/g)];
-  assert.strictEqual(dates.length, markers.length, '存在非 YYYY-MM-DD 的检索日期');
+  const invalid = [...doc.matchAll(/检索日期[^\n]{0,24}/g)]
+    .map((match) => match[0])
+    .filter((text) => !/检索日期\s*\d{4}-\d{2}-\d{2}/.test(text));
+  assert.strictEqual(dates.length, markers.length, '存在非 YYYY-MM-DD 的检索日期：' + invalid.join(' | '));
   for (const [, y, m, d] of dates) {
     const month = Number(m);
     const day = Number(d);
