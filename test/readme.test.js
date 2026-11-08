@@ -201,6 +201,20 @@ test('docs 关键数字标注来源与检索日期', () => {
   assert.ok(smilan.includes('Hopetrip'), '斯米兰开放期未标注来源');
 });
 
+test('docs 交通价格来源含 URL 且检索日期格式合规', () => {
+  const docTraffic = docSection('交通');
+  const basis = docTraffic.slice(docTraffic.indexOf('逐行核对依据'));
+  assert.ok(basis.trim().length > 0, '交通小节缺少逐行核对依据');
+  assert.ok(/https?:\/\/[^\s)]+/.test(basis), '交通价格来源缺少 URL');
+  assert.ok(/检索日期 20\d{2}-\d{2}-\d{2}/.test(basis), '检索日期格式不正确');
+});
+
+test('docs 空链接与空来源边界检查', () => {
+  assert.ok(!/\]\(\)/.test(doc), '存在空 Markdown 链接');
+  assert.ok(!/\(https?:\s*\)/.test(doc), '存在空 URL 链接');
+  assert.ok(!/来源：\s*[，,；;)]/.test(doc), '存在空来源标记');
+});
+
 function docSection(title) {
   const re = new RegExp('^## ' + title + '\\s*$', 'm');
   const match = doc.match(re);
