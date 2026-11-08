@@ -274,3 +274,50 @@ function docSection(title) {
   const next = rest.search(/^## /m);
   return next === -1 ? rest : rest.slice(0, next);
 }
+
+function auditDates(text) {
+  const markers = (text.match(/检索日期/g) || []).length;
+  const dates = [...text.matchAll(/检索日期\s*(\d{4})-(\d{2})-(\d{2})/g)];
+  const invalid = [...text.matchAll(/检索日期[^\n]{0,24}/g)]
+    .map((match) => match[0])
+    .filter((fragment) => !/检索日期\s*\d{4}-\d{2}-\d{2}/.test(fragment));
+  return { markers, dates: dates.length, invalid };
+}
+
+test('日期审计函数覆盖空态、多日期与非法格式', () => {
+  assert.deepStrictEqual(auditDates(''), { markers: 0, dates: 0, invalid: [] });
+  const multi = auditDates('检索日期 2026-10-06；检索日期 2025-06-01');
+  assert.strictEqual(multi.markers, 2);
+  assert.strictEqual(multi.dates, 2);
+  assert.deepStrictEqual(multi.invalid, []);
+  const bad = auditDates('检索日期 2026/10/06');
+  assert.strictEqual(bad.markers, 1);
+  assert.strictEqual(bad.dates, 0);
+  assert.strictEqual(bad.invalid.length, 1);
+  const bare = auditDates('见检索日期。');
+  assert.strictEqual(bare.markers, 1);
+  assert.strictEqual(bare.dates, 0);
+  assert.ok(bare.invalid.some((fragment) => fragment.includes('检索日期')));
+});
+
+test('docs 中每个 URL 所在行的检索日期与来源登记一致', () => {
+  const registerPath = path.join(__dirname, '..', 'docs', 'source-register.md');
+  assert.ok(fs.existsSync(registerPath), '缺少 docs/source-register.md');
+  const register = fs.readFileSync(registerPath, 'utf8');
+  const urls = [...new Set([...doc.matchAll(/https?:\/\/[^\s)），,；;]+/g)].map((m) => m[0]))];
+  assert.ok(urls.length > 0, 'docs 未包含任何来源 URL');
+  for (const url of urls) {
+    const registerLine = register.split('\n').find((row) => row.includes(url)) || '';
+    const registerDate = (registerLine.match(/20\d{2}-\d{2}-\d{2}/) || [])[0];
+    assert.ok(registerDate, '来源登记缺少日期：' + url);
+    const lines = doc.split('\n').filter((line) => line.includes(url));
+    assert.ok(lines.length > 0, '正文缺少 URL：' + url);
+    for (const line of lines) {
+      const dates = [...line.matchAll(/20\d{2}-\d{2}-\d{2}/g)].map((m) => m[0]);
+      assert.ok(dates.length > 0, '正文 URL 行缺少日期：' + url);
+      for (const date of dates) {
+        assert.strictEqual(date, registerDate, 'URL 日期与登记不一致：' + url);
+      }
+    }
+  }
+});
