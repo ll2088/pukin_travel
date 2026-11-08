@@ -284,6 +284,47 @@ function auditDates(text) {
   return { markers, dates: dates.length, invalid };
 }
 
+// 逐行日期提取：非字符串或空文本返回空数组，非法日期不计入，不抛异常。
+function datesInLine(line) {
+  if (typeof line !== 'string' || line.length === 0) return [];
+  return [...line.matchAll(/20\d{2}-\d{2}-\d{2}/g)].map((m) => m[0]);
+}
+
+// 来源登记查表：URL 缺行或无日期时返回 null，由调用方断言，不静默通过。
+function registerDateFor(register, url) {
+  const rows = typeof register === 'string' ? register.split('\n') : [];
+  const line = rows.find((row) => row.includes(url)) || '';
+  return (line.match(/20\d{2}-\d{2}-\d{2}/) || [])[0] || null;
+}
+
+// 返回不一致描述列表；空数组表示零误报。
+function urlDateMismatches(docText, registerText) {
+  const urls = typeof docText === 'string'
+    ? [...new Set([...docText.matchAll(/https?:\/\/[^\s)），,；;]+/g)].map((m) => m[0]))]
+    : [];
+  const mismatches = [];
+  for (const url of urls) {
+    const expected = registerDateFor(registerText, url);
+    if (!expected) {
+      mismatches.push('来源登记缺少日期：' + url);
+      continue;
+    }
+    const lines = docText.split('\n').filter((line) => line.includes(url));
+    if (lines.length === 0) {
+      mismatches.push('正文缺少 URL：' + url);
+      continue;
+    }
+    for (const line of lines) {
+      const dates = datesInLine(line);
+      if (dates.length === 0) mismatches.push('正文 URL 行缺少日期：' + url);
+      for (const date of dates) {
+        if (date !== expected) mismatches.push('URL 日期与登记不一致：' + url + ' ' + date + ' != ' + expected);
+      }
+    }
+  }
+  return mismatches;
+}
+
 test('日期审计函数覆盖空态、多日期与非法格式', () => {
   assert.deepStrictEqual(auditDates(''), { markers: 0, dates: 0, invalid: [] });
   const multi = auditDates('检索日期 2026-10-06；检索日期 2025-06-01');
@@ -320,4 +361,32 @@ test('docs 中每个 URL 所在行的检索日期与来源登记一致', () => {
       }
     }
   }
+});
+
+test('docs URL 日期逐行校验对当前正文与登记零误报', () => {
+  const registerPath = path.join(__dirname, '..', 'docs', 'source-register.md');
+  assert.ok(fs.existsSync(registerPath), '缺少 docs/source-register.md');
+  const register = fs.readFileSync(registerPath, 'utf8');
+  assert.deepStrictEqual(urlDateMismatches(doc, register), [], '当前正文与来源登记存在日期不一致');
+});
+
+test('构造不一致数据时 URL 日期校验必须失败', () => {
+  const register = '| S1 | 示例 | https://example.com/a | 2026-10-06 | 未复核 |';
+  assert.deepStrictEqual(urlDateMismatches('见 https://example.com/a（检索日期 2026-10-06）', register), []);
+  const wrongDate = urlDateMismatches('见 https://example.com/a（检索日期 2026-10-07）', register);
+  assert.strictEqual(wrongDate.length, 1, '未捕获日期不一致');
+  assert.ok(wrongDate[0].includes('2026-10-07') && wrongDate[0].includes('2026-10-06'), '失败信息缺少实际或登记日期');
+  assert.strictEqual(urlDateMismatches('见 https://example.com/a', register).length, 1, '未捕获正文缺日期');
+  assert.strictEqual(urlDateMismatches('见 https://example.com/b 2026-10-06', register).length, 1, '未捕获登记缺行');
+});
+
+test('日期解析与登记查表对非法输入不抛异常也不静默通过', () => {
+  assert.deepStrictEqual(datesInLine(''), []);
+  assert.deepStrictEqual(datesInLine(undefined), []);
+  assert.deepStrictEqual(datesInLine(null), []);
+  assert.deepStrictEqual(datesInLine('检索日期 2026/10/06'), [], '非法格式不应计入合法日期');
+  assert.deepStrictEqual(datesInLine('2026-10-06；2025-06-01'), ['2026-10-06', '2025-06-01']);
+  assert.strictEqual(registerDateFor('', 'https://example.com/a'), null);
+  assert.strictEqual(registerDateFor('| 示例 | https://example.com/a |', 'https://example.com/a'), null, '登记缺日期应返回 null');
+  assert.deepStrictEqual(urlDateMismatches(undefined, undefined), []);
 });
