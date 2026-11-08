@@ -12,6 +12,7 @@
 - 适合人群：首次到访、情侣或朋友小团
 - 详细行程文档：[docs/phuket-4d3n.md](docs/phuket-4d3n.md)
 - 验证方案：[docs/validation-plan.md](docs/validation-plan.md)
+- 来源登记：[docs/source-register.md](docs/source-register.md)
 - 交通价格与住宿分区：[交通](docs/phuket-4d3n.md#交通) · [住宿分区与选择](docs/phuket-4d3n.md#住宿分区与选择)
 - 预算基线与可选升级：[预算](docs/phuket-4d3n.md#预算) · [可选升级方案](docs/phuket-4d3n.md#可选升级方案) · [备选方案](docs/phuket-4d3n.md#备选方案)
 - 两套排法：[行程A](#行程a地理片区动线) 按地理片区推进，适合想少走回头路的游客；[行程B](#行程b老城日落与海滩巡礼) 把老城与日落放在第一天，适合下午抵达或偏好文化的游客。

@@ -215,6 +215,53 @@ test('docs 空链接与空来源边界检查', () => {
   assert.ok(!/来源：\s*[，,；;)]/.test(doc), '存在空来源标记');
 });
 
+test('docs 非空且关键小节非空', () => {
+  assert.ok(doc.trim().length > 0, 'docs 为空');
+  for (const title of ['交通', '住宿分区与选择', '预算', '备选方案', '可选升级方案']) {
+    assert.ok(docSection(title).trim().length > 0, 'docs 缺少或空小节：' + title);
+  }
+});
+
+test('docs 中检索日期均为合法 YYYY-MM-DD', () => {
+  const markers = doc.match(/检索日期/g) || [];
+  const dates = [...doc.matchAll(/检索日期\s*(\d{4})-(\d{2})-(\d{2})/g)];
+  assert.strictEqual(dates.length, markers.length, '存在非 YYYY-MM-DD 的检索日期');
+  for (const [, y, m, d] of dates) {
+    const month = Number(m);
+    const day = Number(d);
+    assert.ok(month >= 1 && month <= 12, '检索日期月份非法：' + y + '-' + m + '-' + d);
+    assert.ok(day >= 1 && day <= 31, '检索日期日非法：' + y + '-' + m + '-' + d);
+  }
+});
+
+test('docs 中出现的 URL 均在来源登记中且有检索日期', () => {
+  const registerPath = path.join(__dirname, '..', 'docs', 'source-register.md');
+  assert.ok(fs.existsSync(registerPath), '缺少 docs/source-register.md');
+  const register = fs.readFileSync(registerPath, 'utf8');
+  const urls = [...new Set([...doc.matchAll(/https?:\/\/[^\s)），,；;]+/g)].map((m) => m[0]))];
+  assert.ok(urls.length > 0, 'docs 未包含任何来源 URL');
+  for (const url of urls) {
+    assert.ok(register.includes(url), '来源登记缺少 URL：' + url);
+    const line = register.split('\n').find((row) => row.includes(url)) || '';
+    assert.ok(/20\d{2}-\d{2}-\d{2}/.test(line), '来源登记缺少检索日期：' + url);
+  }
+});
+
+test('docs 关键来源段落含 URL 与检索日期', () => {
+  const cases = [
+    ['预算', '3251.5'],
+    ['备选方案', '10 月 15 日'],
+    ['可选升级方案', '200 泰铢']
+  ];
+  for (const [title, token] of cases) {
+    const body = docSection(title);
+    assert.ok(body.includes(token), title + ' 缺少关键数字：' + token);
+    const line = body.split('\n').find((row) => row.includes(token)) || '';
+    assert.ok(/https?:\/\//.test(line), title + ' 的关键数字缺少来源 URL：' + token);
+    assert.ok(/检索日期 20\d{2}-\d{2}-\d{2}/.test(line), title + ' 的关键数字缺少检索日期：' + token);
+  }
+});
+
 function docSection(title) {
   const re = new RegExp('^## ' + title + '\\s*$', 'm');
   const match = doc.match(re);
