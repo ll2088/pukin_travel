@@ -134,6 +134,20 @@ test('详细行程文档含交通、跳岛备选与 TDAC 说明', () => {
   assert.ok(doc.replace(/\s/g, '').length >= 1500, '正文非空白字符数不足 1500');
 });
 
+test('详细行程文档含交通价格对比、住宿分区与升级方案', () => {
+  assert.ok(doc.includes('Bolt'), '缺少 Bolt 价格说明');
+  assert.ok(doc.includes('40–80 泰铢'), '缺少芭东到普吉镇大巴价格');
+  assert.ok(doc.includes('100 泰铢'), '缺少机场巴士价格');
+  assert.ok(/^## 住宿分区与选择\s*$/m.test(doc), '缺少住宿分区小节');
+  assert.ok(/^## 可选升级方案\s*$/m.test(doc), '缺少可选升级小节');
+  assert.ok(doc.includes('10 月 15 日'), '缺少斯米兰开放期说明');
+});
+
+test('详细行程文档预算含交叉参考基线', () => {
+  assert.ok(doc.includes('3251.5'), '缺少预算交叉参考');
+  assert.ok(doc.includes('元人民币'), '缺少人民币总计');
+});
+
 function docSection(title) {
   const re = new RegExp('^## ' + title + '\\s*$', 'm');
   const match = doc.match(re);
