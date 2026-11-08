@@ -148,6 +148,59 @@ test('详细行程文档预算含交叉参考基线', () => {
   assert.ok(doc.includes('元人民币'), '缺少人民币总计');
 });
 
+test('README 索引锚点在 docs 中有对应标题', () => {
+  const marker = '(docs/phuket-4d3n.md#';
+  const anchors = [];
+  let i = readme.indexOf(marker);
+  while (i !== -1) {
+    const end = readme.indexOf(')', i);
+    anchors.push(readme.slice(i + marker.length, end));
+    i = readme.indexOf(marker, end);
+  }
+  assert.ok(anchors.length > 0, 'README 缺少指向详细文档小节的索引链接');
+  for (const anchor of anchors) {
+    assert.ok(new RegExp('^## ' + anchor + '\\s*$', 'm').test(doc), '索引锚点无对应二级标题：' + anchor);
+  }
+});
+
+test('README 住宿分区与 docs 住宿分区一致', () => {
+  const readmeStay = section('住宿');
+  const docStay = docSection('住宿分区与选择');
+  assert.ok(readmeStay.trim().length > 0, 'README 缺少住宿小节');
+  assert.ok(docStay.trim().length > 0, 'docs 缺少住宿分区与选择小节');
+  for (const area of ['芭东', '卡伦', '卡塔', '普吉镇']) {
+    assert.ok(readmeStay.includes('| ' + area + ' |'), 'README 住宿表缺少区域：' + area);
+    assert.ok(docStay.includes('| ' + area + ' |'), 'docs 住宿表缺少区域：' + area);
+  }
+  for (const price of ['300–500', '350–600', '250–450']) {
+    assert.ok(readmeStay.includes(price), 'README 住宿价位缺失：' + price);
+    assert.ok(docStay.includes(price), 'docs 住宿价位缺失：' + price);
+  }
+});
+
+test('README 交通价格提示与 docs 交通小节一致', () => {
+  const readmeTraffic = section('交通');
+  const docTraffic = docSection('交通');
+  for (const token of ['40–80 泰铢', '100 泰铢', 'Bolt']) {
+    assert.ok(readmeTraffic.includes(token), 'README 交通缺少：' + token);
+    assert.ok(docTraffic.includes(token), 'docs 交通缺少：' + token);
+  }
+  assert.ok(docTraffic.includes('核对依据'), 'docs 交通价格缺少逐行核对依据');
+});
+
+test('docs 关键数字标注来源与检索日期', () => {
+  const budget = docSection('预算');
+  assert.ok(budget.includes('3251.5'), '缺少 3251.5 交叉参考');
+  assert.ok(budget.includes('去哪儿'), '3251.5 未标注来源');
+  assert.ok(budget.includes('检索日期'), '3251.5 未标注检索日期');
+  const smilan = docSection('备选方案')
+    .split('\n')
+    .filter((line) => line.includes('10 月 15 日'))
+    .join('');
+  assert.ok(smilan.includes('检索日期'), '斯米兰开放期未标注检索日期');
+  assert.ok(smilan.includes('Hopetrip'), '斯米兰开放期未标注来源');
+});
+
 function docSection(title) {
   const re = new RegExp('^## ' + title + '\\s*$', 'm');
   const match = doc.match(re);
