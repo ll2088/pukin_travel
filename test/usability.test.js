@@ -67,6 +67,30 @@ test('详细行程文档内相对链接目标存在', () => {
   }
 });
 
+test('详细行程文档包含免签、季节、住宿、跳岛、时间表、交通耗时、预算、备选必备小节', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (const word of ['免签', '季节', '住宿', '跳岛', '时间表', '交通耗时', '预算', '备选']) {
+    assert.ok(doc.includes(word), '缺少必备内容：' + word);
+  }
+  assert.ok(doc.replace(/\s/g, '').length >= 2000, '文档非空白字符数不足 2000');
+});
+
+test('详细行程文档每日包含时间表、交通耗时、预算与风险备选字段', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (let d = 1; d <= 4; d++) {
+    const match = doc.match(new RegExp('^## Day ' + d + '[^\\n]*$', 'm'));
+    assert.ok(match, '缺少 Day ' + d);
+    const rest = doc.slice(match.index + match[0].length);
+    const next = rest.search(/^## /m);
+    const body = next === -1 ? rest : rest.slice(0, next);
+    for (const field of ['时间表', '交通耗时', '当日预算', '风险与备选']) {
+      assert.ok(body.includes(field), 'Day ' + d + ' 缺少字段：' + field);
+    }
+  }
+});
+
 test('详细行程文档每日至少 3 条含时段或地点的安排', () => {
   const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
   const doc = fs.readFileSync(docPath, 'utf8');

@@ -102,6 +102,7 @@ test('README 不残留占位符或搜索简报重复段落', () => {
 
 test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
+  assert.ok(readme.includes('普吉岛'), 'README 缺少普吉岛攻略说明');
 });
 
 test('README 指向新文档且无旧模板残留', () => {
