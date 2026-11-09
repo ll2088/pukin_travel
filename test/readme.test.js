@@ -134,6 +134,18 @@ test('详细行程文档含交通、跳岛备选与 TDAC 说明', () => {
   assert.ok(doc.replace(/\s/g, '').length >= 1500, '正文非空白字符数不足 1500');
 });
 
+test('详细行程文档含季节对照、住宿区决策与免签说明', () => {
+  const season = docSection('季节与住宿区决策');
+  assert.ok(season.trim().length > 0, '缺少季节与住宿区决策小节');
+  assert.ok(season.includes('旱季') && season.includes('雨季'), '缺少旱雨季说明');
+  for (const area of ['芭东', '卡伦', '普吉镇', '拉威']) {
+    assert.ok(season.includes(area), '住宿区对比缺少：' + area);
+  }
+  assert.ok(doc.includes('免签'), '缺少免签说明');
+  assert.ok(doc.includes('检索日期'), '缺少来源与日期标注');
+  assert.ok(doc.includes('神仙半岛') && doc.includes('卡伦观景台'), '环岛替代线缺少神仙半岛或卡伦观景台');
+});
+
 function docSection(title) {
   const re = new RegExp('^## ' + title + '\\s*$', 'm');
   const match = doc.match(re);
