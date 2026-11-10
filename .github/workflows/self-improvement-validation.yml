@@ -35,6 +35,11 @@ on:
         required: false
         default: ""
         type: string
+      runner:
+        description: "Runner label: self-hosted when the repo has one, otherwise GitHub-hosted"
+        required: false
+        default: "ubuntu-latest"
+        type: string
 
 permissions:
   contents: read
@@ -46,7 +51,7 @@ concurrency:
 jobs:
   pick:
     name: dimensions
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.pick.outputs.matrix }}
@@ -64,7 +69,7 @@ jobs:
   validation:
     name: ${{ matrix.dimension.key }}
     needs: pick
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
