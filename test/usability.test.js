@@ -42,6 +42,10 @@ test('详细行程文档存在且包含至少 4 个二级标题', () => {
   const doc = fs.readFileSync(docPath, 'utf8');
   const h2 = doc.match(/^## /gm) || [];
   assert.ok(h2.length >= 4, '二级标题数量不足 4 个');
+  for (const title of ['行程概览', '逐日安排', '预算', '备选方案']) {
+    assert.ok(new RegExp('^## ' + title + '\\s*$', 'm').test(doc), '缺少必备小节：' + title);
+  }
+  assert.ok(doc.replace(/\s/g, '').length >= 1500, '文档非空白字符数不足 1500');
 });
 
 test('详细行程文档无空小节与 TODO/占位符', () => {
