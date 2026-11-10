@@ -36,12 +36,14 @@ test('关键信息易检索：包含地址/时段/预订提示关键词', () => 
   assert.ok(readme.includes('集合时间'), '缺少集合时间提示');
 });
 
-test('详细行程文档存在且包含至少 4 个二级标题', () => {
+test('详细行程文档存在且包含至少 4 个二级标题和 4 个三级标题', () => {
   const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
   assert.ok(fs.existsSync(docPath), 'docs/phuket-4d3n.md 不存在');
   const doc = fs.readFileSync(docPath, 'utf8');
   const h2 = doc.match(/^## /gm) || [];
   assert.ok(h2.length >= 4, '二级标题数量不足 4 个');
+  const h3 = doc.match(/^### /gm) || [];
+  assert.ok(h3.length >= 4, '三级标题数量不足 4 个');
 });
 
 test('详细行程文档无空小节与 TODO/占位符', () => {
