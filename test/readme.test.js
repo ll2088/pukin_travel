@@ -104,6 +104,14 @@ test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
 });
 
+test('README 行前准备与实用提示提及 ETA 并指向详细文档', () => {
+  const prep = section('行前准备');
+  assert.ok(prep.includes('ETA'), '行前准备缺少 ETA 说明');
+  assert.ok(prep.includes('docs/phuket-4d3n.md'), '行前准备缺少详细文档链接');
+  const tips = section('实用提示');
+  assert.ok(tips.includes('ETA'), '实用提示缺少 ETA 说明');
+});
+
 test('README 指向新文档且无旧模板残留', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
   assert.ok(!/5天4晚|Day\s*5/.test(readme), 'README 残留旧模板表述');

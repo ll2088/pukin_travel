@@ -67,6 +67,18 @@ test('详细行程文档内相对链接目标存在', () => {
   }
 });
 
+test('详细行程文档包含 ETA 签证、交通、住宿、预算与备选方案小节', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (const title of ['ETA 电子旅行授权', '交通', '季节与住宿区决策', '预算', '备选方案']) {
+    const re = new RegExp('^## ' + title + '\\s*$', 'm');
+    assert.ok(re.test(doc), '缺少小节：' + title);
+  }
+  for (let d = 1; d <= 4; d++) {
+    assert.ok(new RegExp('^## Day ' + d + '\\b', 'm').test(doc), '缺少 Day ' + d);
+  }
+});
+
 test('详细行程文档每日至少 3 条含时段或地点的安排', () => {
   const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
   const doc = fs.readFileSync(docPath, 'utf8');
