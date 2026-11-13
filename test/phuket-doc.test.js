@@ -39,13 +39,13 @@ test('详细行程文档包含逐日行程 Day 1 至 Day 4', () => {
 });
 
 test('详细行程文档包含 ETA 签证、交通、住宿、预算与备选方案小节', () => {
-  for (const title of ['ETA 电子旅行授权', '交通', '季节与住宿区决策', '预算', '备选方案']) {
+  for (const title of ['ETA', '交通', '住宿', '季节与住宿区决策', '预算', '备选方案']) {
     assert.ok(docSection(title).trim().length > 0, '缺少小节：' + title);
   }
 });
 
 test('ETA 小节说明停留期冲突并标注来源与日期', () => {
-  const eta = docSection('ETA 电子旅行授权');
+  const eta = docSection('ETA');
   assert.ok(eta.includes('60 天'), 'ETA 小节缺少 60 天停留期说明');
   assert.ok(eta.includes('30 天'), 'ETA 小节缺少与免签 30 天的冲突说明');
   assert.ok(eta.includes('检索日期'), 'ETA 小节缺少来源日期');
