@@ -104,6 +104,23 @@ test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
 });
 
+test('README 包含两套行程、季节、住宿区与来源日期关键词', () => {
+  for (const word of ['两套行程', '季节', '住宿区', '来源日期']) {
+    assert.ok(readme.includes(word), 'README 缺少关键词：' + word);
+  }
+});
+
+test('README 与详细行程文档正文字数达标', () => {
+  assert.ok(readme.length >= 800, 'README 正文字数不足 800');
+  assert.ok(doc.length >= 1200, 'docs/phuket-4d3n.md 正文字数不足 1200');
+});
+
+test('README 与详细行程文档的来源日期格式为 YYYY-MM-DD', () => {
+  const dateRe = /\d{4}-\d{2}-\d{2}/;
+  assert.ok(dateRe.test(readme), 'README 缺少 YYYY-MM-DD 格式的来源日期');
+  assert.ok(dateRe.test(doc), 'docs/phuket-4d3n.md 缺少 YYYY-MM-DD 格式的来源日期');
+});
+
 test('README 指向新文档且无旧模板残留', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
   assert.ok(!/5天4晚|Day\s*5/.test(readme), 'README 残留旧模板表述');
@@ -144,6 +161,11 @@ test('详细行程文档含季节对照、住宿区决策与免签说明', () =>
   assert.ok(doc.includes('免签'), '缺少免签说明');
   assert.ok(doc.includes('检索日期'), '缺少来源与日期标注');
   assert.ok(doc.includes('神仙半岛') && doc.includes('卡伦观景台'), '环岛替代线缺少神仙半岛或卡伦观景台');
+});
+
+test('详细行程文档包含备选方案小节', () => {
+  const alt = docSection('备选方案');
+  assert.ok(alt.trim().length > 0, '缺少备选方案小节');
 });
 
 function docSection(title) {
