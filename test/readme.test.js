@@ -106,6 +106,7 @@ test('README 包含指向 docs/phuket-4d3n.md 的链接', () => {
 
 test('README 指向新文档且无旧模板残留', () => {
   assert.ok(readme.includes('docs/phuket-4d3n.md'), '缺少详细行程文档链接');
+  assert.ok(readme.includes('普吉岛 4 天 3 晚') || readme.includes('4 天 3 晚'), 'README 未提及 4 天 3 晚行程');
   assert.ok(!/5天4晚|Day\s*5/.test(readme), 'README 残留旧模板表述');
 });
 
