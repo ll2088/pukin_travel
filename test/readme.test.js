@@ -146,6 +146,19 @@ test('详细行程文档含季节对照、住宿区决策与免签说明', () =>
   assert.ok(doc.includes('神仙半岛') && doc.includes('卡伦观景台'), '环岛替代线缺少神仙半岛或卡伦观景台');
 });
 
+test('详细行程文档含交通、跳岛、住宿、预算与备选方案关键词', () => {
+  for (const key of ['交通', '跳岛', '住宿', '预算', '备选方案']) {
+    assert.ok(doc.includes(key), '缺少关键词：' + key);
+  }
+  assert.ok(doc.includes('旱季') && doc.includes('雨季'), '缺少旱雨季关键词');
+});
+
+test('详细行程文档去除空白后中文字符数不少于 800 字', () => {
+  const compact = doc.replace(/\s/g, '');
+  const chinese = compact.match(/[\u4e00-\u9fa5]/g) || [];
+  assert.ok(chinese.length >= 800, '中文字符数不足 800，实际 ' + chinese.length);
+});
+
 function docSection(title) {
   const re = new RegExp('^## ' + title + '\\s*$', 'm');
   const match = doc.match(re);

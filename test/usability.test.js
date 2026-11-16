@@ -67,6 +67,14 @@ test('详细行程文档内相对链接目标存在', () => {
   }
 });
 
+test('详细行程文档关键章节标题可被定位', () => {
+  const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
+  const doc = fs.readFileSync(docPath, 'utf8');
+  for (const title of ['季节与住宿区决策', '交通', '预算', '备选方案']) {
+    assert.ok(new RegExp('^## ' + title + '\\s*$', 'm').test(doc), '缺少可定位章节：' + title);
+  }
+});
+
 test('详细行程文档每日至少 3 条含时段或地点的安排', () => {
   const docPath = path.join(__dirname, '..', 'docs', 'phuket-4d3n.md');
   const doc = fs.readFileSync(docPath, 'utf8');
